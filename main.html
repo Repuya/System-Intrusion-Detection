@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Intrusion Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+        
+        body {
+            background-color: #0a0a0a;
+            color: #00ff00;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Entry Screen Styles */
+        .entry-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0a0a, #001a00);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .warning-symbol {
+            font-size: 80px;
+            color: #ff0000;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+        
+        .entry-title {
+            font-size: 36px;
+            color: #ff0000;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ff0000;
+        }
+        
+        .entry-message {
+            font-size: 18px;
+            color: #00ff00;
+            text-align: center;
+            max-width: 600px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        
+        .disclaimer {
+            font-size: 14px;
+            color: #ffaa00;
+            text-align: center;
+            max-width: 500px;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+        
+        .access-button {
+            background: linear-gradient(to right, #ff0000, #800000);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+        
+        .access-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+        }
+        
+        .countdown {
+            font-size: 14px;
+            color: #ffaa00;
+            margin-top: 20px;
+        }
+        
+        /* Main System Styles */
+        .main-system {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+        
+        .header {
+            background-color: #000;
+            padding: 10px 20px;
+            border-bottom: 1px solid #00ff00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff0000;
+            text-shadow: 0 0 10px #ff0000;
+        }
+        
+        .warning {
+            color: #ff0000;
+            animation: blink 1s infinite;
+            font-weight: bold;
+        }
+        
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background-color: #000;
+            border-right: 1px solid #00ff00;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .terminal {
+            flex: 1;
+            background-color: #000;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #00ff00;
+        }
+        
+        .terminal-line {
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+        
+        .command-input {
+            background-color: #000;
+            border: none;
+            color: #00ff00;
+            padding: 15px 20px;
+            width: 100%;
+            font-size: 16px;
+            outline: none;
+            border-top: 1px solid #00ff00;
+        }
+        
+        .command-input::before {
+            content: "> ";
+        }
+        
+        .scan-section {
+            padding: 20px;
+            background-color: #000;
+            border-top: 1px solid #00ff00;
+        }
+        
+        .scan-button {
+            background-color: #ff0000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .scan-button:hover {
+            background-color: #cc0000;
+        }
+        
+        .progress-container {
+            margin-top: 15px;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #111;
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid #00ff00;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(to right, #ff0000, #ff5500);
+            width: 0%;
+            transition: width 0.5s;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .status-item {
+            background-color: #111;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #333;
+        }
+        
+        .status-title {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+        
+        .status-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .critical {
+            color: #ff0000;
+            text-shadow: 0 0 5px #ff0000;
+        }
+        
+        .safe {
+            color: #00ff00;
+        }
+        
+        .files-list {
+            margin-top: 20px;
+        }
+        
+        .file-item {
+            padding: 10px;
+            background-color: #111;
+            margin-bottom: 5px;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+            border-left: 3px solid #ff0000;
+        }
+        
+        .file-name {
+            color: #ff5500;
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        .data-theft-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            background: linear-gradient(135deg, #1a1a1a, #000);
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            overflow: hidden;
+        }
+        
+        .popup-header {
+            background: linear-gradient(to right, #ff0000, #800000);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .popup-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .popup-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .popup-content {
+            padding: 20px;
+        }
+        
+        .success-icon {
+            text-align: center;
+            font-size: 48px;
+            color: #00ff00;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+        
+        .success-message {
+            text-align: center;
+            font-size: 24px;
+            color: #00ff00;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        
+        .stolen-data {
+            background-color: #111;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .data-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .data-item:last-child {
+            border-bottom: none;
+        }
+        
+        .popup-footer {
+            display: flex;
+            justify-content: center;
+            padding: 15px;
+            border-top: 1px solid #333;
+        }
+        
+        .continue-button {
+            background: linear-gradient(to right, #ff0000, #800000);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.1;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            display: none;
+        }
+        
+        /* New Warning Message Popup */
+        .warning-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            background: linear-gradient(135deg, #1a1a1a, #000);
+            border: 2px solid #ffaa00;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 170, 0, 0.5);
+            z-index: 1001;
+            display: none;
+            overflow: hidden;
+        }
+        
+        .warning-popup-header {
+            background: linear-gradient(to right, #ffaa00, #806000);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .warning-popup-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .warning-popup-content {
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .warning-icon {
+            font-size: 48px;
+            color: #ffaa00;
+            margin-bottom: 20px;
+        }
+        
+        .warning-message {
+            font-size: 20px;
+            color: #ffaa00;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Entry Screen -->
+    <div class="entry-screen" id="entry-screen">
+        <div class="warning-symbol">⚠️</div>
+        <div class="entry-title">SECURITY BREACH DETECTED</div>
+        <div class="entry-message">
+            WARNING: Unauthorized access attempt detected in the main network. 
+            System intrusion in progress. Immediate action required to prevent 
+            complete system compromise and data exfiltration.
+        </div>
+        <button class="access-button" id="access-button">ACCESS SECURITY CONSOLE</button>
+        <div class="countdown" id="countdown">Auto-access in 10 seconds</div>
+    </div>
+    
+    <!-- Main System -->
+    <div class="main-system" id="main-system">
+        <div class="matrix-bg" id="matrix-bg"></div>
+        <div class="overlay" id="overlay"></div>
+        
+        <div class="header">
+            <div class="logo">CYBER_SHIELD v2.5.7</div>
+            <div class="warning">⚠️ INTRUSION DETECTED ⚠️</div>
+            <div class="safe">ENCRYPTION: ACTIVE</div>
+        </div>
+        
+        <div class="container">
+            <div class="sidebar">
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-title">SYSTEM STATUS</div>
+                        <div class="status-value critical">COMPROMISED</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-title">FIREWALL</div>
+                        <div class="status-value critical">BREACHED</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-title">DATA ENCRYPTION</div>
+                        <div class="status-value critical">CRACKED</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-title">NETWORK</div>
+                        <div class="status-value critical">UNAUTHORIZED ACCESS</div>
+                    </div>
+                </div>
+                
+                <div class="files-list">
+                    <div class="status-title">ACCESSED FILES:</div>
+                    <div class="file-item">
+                        <div class="file-name">passwords.db</div>
+                        <div class="critical">EXFILTRATED</div>
+                    </div>
+                    <div class="file-item">
+                        <div class="file-name">financial_records.xls</div>
+                        <div class="critical">EXFILTRATED</div>
+                    </div>
+                    <div class="file-item">
+                        <div class="file-name">employee_data.csv</div>
+                        <div class="critical">EXFILTRATED</div>
+                    </div>
+                    <div class="file-item">
+                        <div class="file-name">system_backup.zip</div>
+                        <div class="critical">DOWNLOADED</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="main-content">
+                <div class="terminal" id="terminal">
+                    <div class="terminal-line">> Initializing system diagnostics...</div>
+                    <div class="terminal-line">> [ERROR] Unauthorized access detected</div>
+                    <div class="terminal-line">> Scanning network interfaces...</div>
+                    <div class="terminal-line">> [ALERT] External connection from IP: 192.168.45.237</div>
+                    <div class="terminal-line">> Tracing connection...</div>
+                    <div class="terminal-line">> Source: Unknown/Cloaked</div>
+                    <div class="terminal-line">> Analyzing intrusion pattern...</div>
+                    <div class="terminal-line">> Pattern match: APT29 "Cozy Bear"</div>
+                    <div class="terminal-line">> [CRITICAL] Data exfiltration in progress</div>
+                    <div class="terminal-line">> Attempting to block connection...</div>
+                    <div class="terminal-line">> [FAILED] Countermeasures ineffective</div>
+                    <div class="terminal-line">> Activating emergency protocols...</div>
+                    <div class="terminal-line">> Deploying honeypot...</div>
+                    <div class="terminal-line">> Honeypot engaged. Tracking attacker movements.</div>
+                    <div class="terminal-line">> [ALERT] Root access compromised</div>
+                    <div class="terminal-line">> System integrity at 23%</div>
+                    <div class="terminal-line">> 'help': 'Available commands: scan, trace, firewall, encrypt, decrypt, status, exit'</div>
+                    <div class="terminal-line">> <span class="blink">_</span></div>
+                </div>
+                
+                <input type="text" class="command-input" id="command-input" placeholder="Type commands here...">
+                
+                <div class="scan-section">
+                    <button class="scan-button" id="scan-button">INITIATE COUNTERMEASURES</button>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress" id="progress-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="data-theft-popup" id="data-theft-popup">
+            <div class="popup-header">
+                <div class="popup-title">DATA EXFILTRATION COMPLETE</div>
+                <button class="popup-close" id="popup-close">✕</button>
+            </div>
+            <div class="popup-content">
+                <div class="success-icon">✓</div>
+                <div class="success-message">SUCCESSFULLY EXTRACTED ALL TARGET DATA</div>
+                
+                <div class="stolen-data">
+                    <div class="data-item">
+                        <span>User Credentials Database</span>
+                        <span class="critical">COMPROMISED</span>
+                    </div>
+                    <div class="data-item">
+                        <span>Financial Records (Q1-Q4 2023)</span>
+                        <span class="critical">EXFILTRATED</span>
+                    </div>
+                    <div class="data-item">
+                        <span>Employee Personal Data</span>
+                        <span class="critical">EXFILTRATED</span>
+                    </div>
+                    <div class="data-item">
+                        <span>System Architecture Documents</span>
+                        <span class="critical">EXFILTRATED</span>
+                    </div>
+                    <div class="data-item">
+                        <span>Client Database</span>
+                        <span class="critical">EXFILTRATED</span>
+                    </div>
+                    <div class="data-item">
+                        <span>Network Security Protocols</span>
+                        <span class="critical">EXFILTRATED</span>
+                    </div>
+                    <div class="data-item">
+                        <span>Backup Server Access Keys</span>
+                        <span class="critical">COMPROMISED</span>
+                    </div>
+                    <div class="data-item">
+                        <span>Email Correspondence Archive</span>
+                        <span class="critical">EXFILTRATED</span>
+                    </div>
+                </div>
+                
+                <div class="terminal-line">> Total data extracted: 4.7 GB</div>
+                <div class="terminal-line">> Transfer completed to external server</div>
+                <div class="terminal-line">> Covering tracks... DONE</div>
+            </div>
+            <div class="popup-footer">
+                <button class="continue-button" id="continue-button">CONTINUE MONITORING</button>
+            </div>
+        </div>
+        
+        <!-- New Warning Message Popup -->
+        <div class="warning-popup" id="warning-popup">
+            <div class="warning-popup-header">
+                <div class="warning-popup-title">SECURITY ADVISORY</div>
+            </div>
+            <div class="warning-popup-content">
+                <div class="warning-icon">⚠️</div>
+                <div class="warning-message">mag-ingat sa susunod para hindi na maulit</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="typing-sound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==" type="audio/wav">
+    </audio>
+    <audio id="alert-sound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==" type="audio/wav">
+    </audio>
+    <audio id="success-sound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==" type="audio/wav">
+    </audio>
+    <audio id="button-sound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==" type="audio/wav">
+    </audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const entryScreen = document.getElementById('entry-screen');
+            const mainSystem = document.getElementById('main-system');
+            const accessButton = document.getElementById('access-button');
+            const countdownElement = document.getElementById('countdown');
+            const terminal = document.getElementById('terminal');
+            const commandInput = document.getElementById('command-input');
+            const scanButton = document.getElementById('scan-button');
+            const progressBar = document.getElementById('progress-bar');
+            const dataTheftPopup = document.getElementById('data-theft-popup');
+            const overlay = document.getElementById('overlay');
+            const popupClose = document.getElementById('popup-close');
+            const continueButton = document.getElementById('continue-button');
+            const matrixBg = document.getElementById('matrix-bg');
+            const warningPopup = document.getElementById('warning-popup');
+            
+            // Audio elements
+            const typingSound = document.getElementById('typing-sound');
+            const alertSound = document.getElementById('alert-sound');
+            const successSound = document.getElementById('success-sound');
+            const buttonSound = document.getElementById('button-sound');
+            
+            // Create simple beep sounds programmatically
+            function createBeepSound(audioElement, frequency, duration, volume) {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.value = frequency;
+                gainNode.gain.value = volume;
+                
+                oscillator.start();
+                oscillator.stop(context.currentTime + duration);
+            }
+            
+            // Play sound functions
+            function playTypingSound() {
+                createBeepSound(typingSound, 800, 0.1, 0.1);
+            }
+            
+            function playAlertSound() {
+                createBeepSound(alertSound, 400, 0.5, 0.3);
+            }
+            
+            function playSuccessSound() {
+                createBeepSound(successSound, 1000, 0.3, 0.3);
+            }
+            
+            function playButtonSound() {
+                createBeepSound(buttonSound, 600, 0.1, 0.2);
+            }
+            
+            // Auto-access countdown
+            let countdown = 10;
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                countdownElement.textContent = `Auto-access in ${countdown} seconds`;
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    accessMainSystem();
+                }
+            }, 1000);
+            
+            // Access button click
+            accessButton.addEventListener('click', function() {
+                playButtonSound();
+                clearInterval(countdownInterval);
+                accessMainSystem();
+            });
+            
+            function accessMainSystem() {
+                entryScreen.style.display = 'none';
+                mainSystem.style.display = 'flex';
+                initializeMainSystem();
+            }
+            
+            function initializeMainSystem() {
+                // Matrix background effect
+                function createMatrix() {
+                    const chars = "01010101010101010101010101ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                    const columns = Math.floor(window.innerWidth / 20);
+                    
+                    for (let i = 0; i < columns; i++) {
+                        const delay = Math.random() * 5;
+                        const div = document.createElement('div');
+                        div.style.cssText = `
+                            position: absolute;
+                            top: -50px;
+                            left: ${i * 20}px;
+                            width: 2px;
+                            height: ${Math.random() * 50 + 20}px;
+                            background: linear-gradient(to bottom, transparent, #00ff00);
+                            animation: fall ${Math.random() * 5 + 3}s linear infinite;
+                            animation-delay: ${delay}s;
+                        `;
+                        div.textContent = chars.charAt(Math.floor(Math.random() * chars.length));
+                        matrixBg.appendChild(div);
+                    }
+                    
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        @keyframes fall {
+                            0% { top: -50px; opacity: 1; }
+                            100% { top: 100vh; opacity: 0; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+                
+                createMatrix();
+                
+                // Terminal commands
+                const commands = {
+                    'help': 'Available commands: scan, trace, firewall, encrypt, decrypt, status, exit',
+                    'scan': 'Scanning network... [No threats found? Just kidding! System is compromised!]',
+                    'trace': 'Tracing attacker... IP: 192.168.45.237 [CLOAKED] Location: UNKNOWN',
+                    'firewall': 'Firewall status: BREACHED - All rules bypassed',
+                    'encrypt': 'Encryption protocol failed - Key already compromised',
+                    'decrypt': 'Why decrypt when they already have the keys?',
+                    'status': 'SYSTEM STATUS: COMPROMISED - Data exfiltration in progress',
+                    'exit': 'There is no escape from this simulation!',
+                    'hack the planet': 'Whoa! 90s movie reference detected!',
+                    'access mainframe': 'Mainframe access already granted to attacker',
+                    'initiate shutdown': 'Shutdown command overridden by attacker',
+                    'whoami': 'You are: THE VICTIM'
+                };
+                
+                commandInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        playTypingSound();
+                        const command = this.value.toLowerCase().trim();
+                        this.value = '';
+                        
+                        addTerminalLine(`> ${command}`);
+                        
+                        if (commands[command]) {
+                            setTimeout(() => {
+                                playTypingSound();
+                                addTerminalLine(commands[command]);
+                            }, 500);
+                        } else if (command) {
+                            setTimeout(() => {
+                                playAlertSound();
+                                addTerminalLine(`Command not recognized: ${command}`);
+                            }, 500);
+                        }
+                        
+                        // Auto-scroll to bottom
+                        terminal.scrollTop = terminal.scrollHeight;
+                    }
+                });
+                
+                function addTerminalLine(text) {
+                    const line = document.createElement('div');
+                    line.className = 'terminal-line';
+                    line.innerHTML = text;
+                    terminal.appendChild(line);
+                    
+                    // Auto-scroll to bottom
+                    terminal.scrollTop = terminal.scrollHeight;
+                }
+                
+                // Countermeasures button
+                scanButton.addEventListener('click', function() {
+                    playButtonSound();
+                    this.disabled = true;
+                    this.textContent = 'COUNTERMEASURES ACTIVE';
+                    
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += 2;
+                        progressBar.style.width = `${progress}%`;
+                        
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            showDataTheftPopup();
+                        }
+                    }, 100);
+                });
+                
+                function showDataTheftPopup() {
+                    playAlertSound();
+                    overlay.style.display = 'block';
+                    dataTheftPopup.style.display = 'block';
+                    
+                    // Add dramatic terminal lines
+                    setTimeout(() => {
+                        playAlertSound();
+                        addTerminalLine('> [CRITICAL] Countermeasures failed');
+                    }, 500);
+                    setTimeout(() => {
+                        playAlertSound();
+                        addTerminalLine('> [ALERT] System fully compromised');
+                    }, 1000);
+                    setTimeout(() => {
+                        playAlertSound();
+                        addTerminalLine('> [WARNING] All data has been exfiltrated');
+                    }, 1500);
+                    setTimeout(() => {
+                        playAlertSound();
+                        addTerminalLine('> Initiating emergency shutdown...');
+                    }, 2000);
+                    setTimeout(() => {
+                        playAlertSound();
+                        addTerminalLine('> Shutdown command overridden by attacker');
+                    }, 2500);
+                    setTimeout(() => {
+                        playAlertSound();
+                        addTerminalLine('> System control transferred to external entity');
+                    }, 3000);
+                }
+                
+                // Close popup events
+                popupClose.addEventListener('click', function() {
+                    playButtonSound();
+                    closePopup();
+                });
+                
+                continueButton.addEventListener('click', function() {
+                    playButtonSound();
+                    closePopup();
+                    showWarningMessage();
+                });
+                
+                overlay.addEventListener('click', function() {
+                    playButtonSound();
+                    closePopup();
+                });
+                
+                function closePopup() {
+                    overlay.style.display = 'none';
+                    dataTheftPopup.style.display = 'none';
+                    scanButton.disabled = false;
+                    scanButton.textContent = 'INITIATE COUNTERMEASURES';
+                    progressBar.style.width = '0%';
+                    
+                    // Reset with a twist
+                    setTimeout(() => {
+                        playAlertSound();
+                        addTerminalLine('> Just kidding! You can\'t escape that easily!');
+                        addTerminalLine('> System still compromised...');
+                        addTerminalLine('> Have fun with the simulation!');
+                    }, 1000);
+                }
+                
+                function showWarningMessage() {
+                    playAlertSound();
+                    warningPopup.style.display = 'block';
+                    
+                    // Auto-remove after 10 seconds
+                    setTimeout(() => {
+                        warningPopup.style.display = 'none';
+                        enableDeviceControls();
+                    }, 10000);
+                }
+                
+                function enableDeviceControls() {
+                    // Enable all interactive elements
+                    const interactiveElements = document.querySelectorAll('button, input');
+                    interactiveElements.forEach(element => {
+                        element.disabled = false;
+                    });
+                    
+                    // Add a confirmation message
+                    addTerminalLine('> Device controls restored. Proceed with caution.');
+                }
+                
+                // Auto-add some dramatic lines
+                setTimeout(() => {
+                    playAlertSound();
+                    addTerminalLine('> [ALERT] New vulnerability exploited: CVE-2023-4863');
+                    addTerminalLine('> [CRITICAL] Kernel-level access achieved by attacker');
+                }, 5000);
+                
+                setTimeout(() => {
+                    playAlertSound();
+                    addTerminalLine('> [WARNING] Data exfiltration rate increased to 15MB/s');
+                    addTerminalLine('> Emergency protocols: FAILED');
+                }, 10000);
+            }
+        });
+    </script>
+</body>
+</html>
